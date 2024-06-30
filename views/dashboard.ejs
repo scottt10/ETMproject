@@ -1,0 +1,27 @@
+
+    <div class="container mt-4">
+        <h2 class="text-white">Sell Product</h2>
+        <p class="mt-3 alert alert-primary">We kindly welcome you to our ETM Sell Product page. Fill out the product form below, ensuring all information is accurate to facilitate a smooth verification process. Our admin will verify your product and reach out to you soon. </p>
+        <div class="card mb-4">
+            <div class="card-header">Product Information</div>
+            <div class="card-body">
+                <form id="product-form" action="/submit" method="post">
+                    <div class="mb-3">
+                        <label for="name" class="form-label">Product Name</label>
+                        <input type="text" class="form-control" id="name" name="name">
+                    </div>
+                    <div class="mb-3">
+                        <label for="price" class="form-label">Price (in $)</label>
+                        <input type="text" class="form-control" id="price" name="price">
+                    </div>
+                    <div class="mb-3">
+                        <label for="description" class="form-label">Description</label>
+                        <input type="text" class="form-control" id="description" name="description">
+                    </div>
+
+                    <button type="submit" class="btn btn-primary">Request Here</button>
+                </form>
+                <p id="resp-msg" class="alert alert-info d-none mt-3">Please wait...</p>
+            </div>
+        </div>
+    </div>

@@ -12,7 +12,8 @@ router.use(session({
     secret: secret,
     resave: true,
     saveUninitialized: true,
-    cookie: { secure: false }
+    cookie: { secure: false, httpOnly: false }
+    
 }));
 
 router.use(cookieParser());
@@ -50,6 +51,16 @@ function isUser(req, res, next) {
     }
     return res.status(403).send('404');
 }
+function isAdmin(req, res, next) {
+    const token = req.cookies.token;
+    if (token) {
+        const decoded = jwt.verify(token, secret);
+        if (decoded.role === 'admin') {
+            return next();
+        }
+    }
+    return res.status(403).send('404');
+}
 
 router.get('/', (req, res) => {
     // Example condition to check if the user is logged in
@@ -82,7 +93,7 @@ router.post('/login', async (req, res) => {
         console.log(token)
         const options = {
             maxAge: 1000 * 60 * 30000, // 15 minutes
-            httpOnly: true, // The cookie is only accessible by the web server
+            httpOnly: false, // The cookie is only accessible by the web server
         };
 
         // req.session.token = token;
@@ -120,8 +131,32 @@ router.post('/submit', isUser, async (req, res) => {
     }
 });
 
-router.get('/admin', (req, res) => {
-    return res.render('admin');
+router.post('/update-product-status', isAdmin, async (req, res) => {
+    const { productId } = req.body;
+    let { status } = req.body;
+    if(status === 'true'){
+        status = 'true';
+    }
+    else{
+        status = 'false';
+    }
+
+    try {
+        const product = await Product.findById(productId).exec();
+        if (!product) {
+            return res.status(404).send('Product not found');
+        }
+        product.status = status;
+        await product.save();
+        res.status(200).send('Product status updated');
+    } catch (err) {
+        console.error(err);
+        res.status(500).send('Error updating product status');
+    }
+});
+router.get('/admin',isAdmin, async (req, res) => {
+    let products = await Product.find({}).exec();
+    return res.render('admin',{products});
 }
 );
 

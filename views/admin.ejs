@@ -1,1 +1,49 @@
-{{product}}
+<div class="product-list">
+    <% if (products.length> 0) { %>
+        <div class="container">
+            <div class="row mt-5">
+                <h1 class="text-white">Review the products</h1>
+
+
+                <% products.forEach(product=> { %>
+                    <a href="/product/<%= product.name %>" class="col-md-2">
+                        <div class="card p-2">
+                            <h2>
+                                <%- product.name %>
+                            </h2>
+                            <p>
+                                <%- product.description %>
+                            </p>
+                            <p>Price: $<%- product.price %>
+                            </p>
+                            <form action="/update-product-status" method="POST" class="mt-2 d-flex justify-content-evenly">
+                                <input type="hidden" name="productId" value="<%= product.id %>">
+                                <input type="checkbox" id="status_<%= product.name %>" name="status" value="true" <%= product.status ? 'checked' : '' %> onchange="this.form.submit()">
+                                <label class="mb-2" for="status_<%= product.name %>">Review</label>
+                            </form>
+                            
+                        </div>
+                    </a>
+                    <% }) %>
+            </div>
+
+        </div>
+        <% } else { %>
+            <div>
+
+                <div class="d-flex " style="justify-content: center; align-items: center;height: 85vh;">
+
+                    <p class="text-white">No products available.</p>
+                </div>
+            </div>
+            <% } %>
+            <div class="container">
+                <form>
+                    <h1 class="text-white mt-5" for="n">Product search</h1>
+                    <p class="text-white">searching the products locally for all the users.</p>
+                    <textarea rows="5" cols="12" class="w-100" name="n" id="n"></textarea>
+                    <button style="border: 1px solid white;color: white;margin-top: 15px;">Submit</button>
+                </form>
+            </div>
+           
+</div>

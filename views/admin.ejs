@@ -18,8 +18,8 @@
                             </p>
                             <form action="/update-product-status" method="POST" class="mt-2 d-flex justify-content-evenly">
                                 <input type="hidden" name="productId" value="<%= product.id %>">
-                                <input type="checkbox" id="status_<%= product.name %>" name="status" value="true" <%= product.status ? 'checked' : '' %> onchange="this.form.submit()">
-                                <label class="mb-2" for="status_<%= product.name %>">Review</label>
+                                <!-- <input class="forbot" type="checkbox" id="status_<%= product.name %>" name="status" value="true" <%= product.status ? 'checked' : '' %> onchange="this.form.submit()"> -->
+                                <button type="submit">Review</button>
                             </form>
                             
                         </div>

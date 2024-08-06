@@ -2,8 +2,7 @@
 
 const mongoose = require("mongoose");
 const db =
-  "mongodb+srv://samyoggiri:s7gnylhFWh4kjEYy@cluster0.3pwlkir.mongodb.net/simple";
-/* Replace <password> with your database password */
+  "mongodb://localhost:27017/simple";
 
 mongoose.set("strictQuery", true, "useNewUrlParser", true);
 

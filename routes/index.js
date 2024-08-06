@@ -1,10 +1,13 @@
 const express = require('express');
 const router = express.Router();
 const User = require('../models/User');
+const Admin = require('../models/Admin');
 const Product = require('../models/Product');
+const mongoSanitize = require('mongo-sanitize');
 const jwt = require('jsonwebtoken');
 const cookieParser = require('cookie-parser');
 const session = require('express-session');
+const { mongo } = require('mongoose');
 
 const secret = 'mys3cret@f0reTm'
 
@@ -22,6 +25,10 @@ router.use((req, res, next) => {
     res.locals.isLoggedIn = req.cookies.token ? true : false;
     next();
 })
+
+
+// user login, router and middleware
+
 
 function isAlreadyLoggedin(req, res, next) {
     // console.log(req.route);
@@ -41,36 +48,34 @@ function isAlreadyLoggedin(req, res, next) {
     next(); // Proceed to the next middleware/route handler
 }
 
+
 function isUser(req, res, next) {
     const token = req.cookies.token;
     if (token) {
-        const decoded = jwt.verify(token, secret);
-        if (decoded.role === 'user') {
             return next();
-        }
     }
-    return res.status(403).send('404');
-}
-function isAdmin(req, res, next) {
-    const token = req.cookies.token;
-    if (token) {
-        const decoded = jwt.verify(token, secret);
-        if (decoded.role === 'admin') {
-            return next();
-        }
-    }
-    return res.status(403).send('404');
+    return res.status(403).send('Unauthorized Access');
 }
 
+
 router.get('/', (req, res) => {
-    // Example condition to check if the user is logged in
-    // This should be replaced with your actual logic, e.g., checking a session or a token
     res.render('index');
 });
+
 
 router.get("/login", isAlreadyLoggedin, (req, res) => {
     res.render('login');
 
+});
+
+router.get('/profile', isUser, (req, res) => {
+    let token = req.cookies.token;
+    let decoded = jwt.verify(token, secret);
+    let name = decoded.username;
+    res.status(200).json({
+        name: name,
+        role: 'user'
+    });
 });
 
 router.post('/login', async (req, res) => {
@@ -89,7 +94,7 @@ router.post('/login', async (req, res) => {
         }
 
         const token = jwt.sign({ username, role: user.role }, secret);
-
+        admin/admin/
         console.log(token)
         const options = {
             maxAge: 1000 * 60 * 30000, // 15 minutes
@@ -99,16 +104,15 @@ router.post('/login', async (req, res) => {
         // req.session.token = token;
         res.cookie('token', token, options);
 
-        if (user.role === 'admin') {
-            return res.redirect('admin');
-        } else {
-            return res.redirect('dashboard');
-        }
+        return res.redirect('dashboard');
+       
+        
     } catch (err) {
         console.error(err);
         return res.status(500).send('Error signing the token');
     }
 });
+
 
 router.get('/dashboard',isUser, (req, res) => {
     res.render('dashboard');
@@ -131,34 +135,6 @@ router.post('/submit', isUser, async (req, res) => {
     }
 });
 
-router.post('/update-product-status', isAdmin, async (req, res) => {
-    const { productId } = req.body;
-    let { status } = req.body;
-    if(status === 'true'){
-        status = 'true';
-    }
-    else{
-        status = 'false';
-    }
-
-    try {
-        const product = await Product.findById(productId).exec();
-        if (!product) {
-            return res.status(404).send('Product not found');
-        }
-        product.status = status;
-        await product.save();
-        res.status(200).send('Product status updated');
-    } catch (err) {
-        console.error(err);
-        res.status(500).send('Error updating product status');
-    }
-});
-router.get('/admin',isAdmin, async (req, res) => {
-    let products = await Product.find({}).exec();
-    return res.render('admin',{products});
-}
-);
 
 router.get('/profile', isUser, (req, res) => {
     let token = req.cookies.token;
@@ -186,6 +162,107 @@ router.get('/product/:name', isUser, async (req, res) => {
     }
     res.render('product-detail', { product });
 });
+
+
+// admin login, router and middleware
+
+function isAdmin(req, res, next) {
+    const token = req.cookies.token;
+    if (token) {
+        const decoded = jwt.verify(token, secret);
+        if (decoded.role === 'admin') {
+            return next();
+        }
+    }
+    return res.status(403).send('404');
+}
+
+
+function isAlreadyLoggedinAdmin(req, res, next){
+    const token = req.cookies.token;
+    if(token){
+        return res.redirect('admin');
+    }
+    else{
+        next();
+    }
+}
+
+function isLogoutAdmin(req, res, next){
+    const token = req.cookies.token;
+    if(token){
+        const decoded = jwt.verify(token, secret);
+        if(decoded.role === 'admin'){
+            return next();
+        }
+    }
+    return res.status(403).json({message: "You are not authorized to access this page"});
+}
+
+router.get("/backend",  (req, res) => {
+    res.render('backend');
+
+});
+
+router.post('/backend', async (req, res) => {
+    let { username, password } = req.body;
+    // Sanitize username and password
+    username = username;
+    password = password;
+
+    try {
+        const admin = await Admin.findOne({
+            username,
+            password
+        });
+
+        if (!admin) {
+            return res.status(400).send('Invalid username or password');
+        }
+
+        console.log(admin);
+
+        const session = jwt.sign({ username, role: admin.role }, secret);
+
+        console.log(session);
+        const options = {
+            maxAge: 1000 * 60 * 15, 
+            httpOnly: false, 
+        };
+
+        // req.session.token = token;
+        res.cookie('token', session, options);
+
+        res.status(200).redirect('admin');
+    } 
+    catch (error) {
+        return res.status(500).send('Internal server error');
+    }
+});
+
+router.post('/update-product-status', isAdmin, async (req, res) => {
+    const { productId } = req.body;
+    
+    try {
+        const product = await Product.findById(productId).exec();
+        if (!product) {
+            return res.status(404).send('Product not found');
+        }
+        product.status = true;
+        await product.save();
+        res.status(200).send('Product status updated');
+    } catch (err) {
+        console.error(err);
+        res.status(500).send('Error updating product status');
+    }
+});
+
+router.get('/admin', isAdmin, async (req, res) => {
+    let products = await Product.find({}).exec();
+    return res.render('admin',{products});
+}
+);
+
 
 router.get('/logout', (req,res) => {
     if(!req.cookies.token) {
